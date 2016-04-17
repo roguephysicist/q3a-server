@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Q3a-server by roguephysicist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Q3a-server</h1>
+      <h2 class="project-tagline">A guide for creating a Quake III Arena dedicated server</h2>
+      <a href="https://github.com/roguephysicist/q3a-server" class="btn">View on GitHub</a>
+      <a href="https://github.com/roguephysicist/q3a-server/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/roguephysicist/q3a-server/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="installing-a-quake-iii-arena-dedicated-server" class="anchor" href="#installing-a-quake-iii-arena-dedicated-server" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing a Quake III Arena dedicated server</h1>
+
+<p>This is a guide for setting up a dedicated Q3A server on Linux. It is mostly
+distribution-agnostic so it will work on almost any Linux flavor with little or
+no modification. The required software is available for many hardware platforms,
+so you can very quickly setup your own server on almost any kind of computer. A
+Raspberry Pi 2 or 3 makes an excellent Q3A server!</p>
+
+<p>This server will run a specific game type and cycle through maps automatically.
+If you leave the server running with bots, they will continue to battle it out
+while you are not connected! This guide has only been tested for the original
+Q3A, but I imagine that similar steps and configuration files could be used for
+other games that use this engine.</p>
+
+<p>You can read more about this on the <a href="http://wiki.ioquake3.org/Sys_Admin_Guide">official ioquake3 documentation</a>.</p>
+
+<p>You will need:</p>
+
+<ul>
+<li>Original <code>.pk3</code> files from the game CD or digital download,</li>
+<li>
+<code>ioquake3-server</code>, a <a href="http://ioquake3.org">modern implementation</a> 
+of the Q3A engine,</li>
+<li>any modern Linux distribution, I use Debian Jessie here.</li>
+</ul>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>I suggest creating a user with restricted privileges for running the Q3A server.
+This makes it easier to manage the server. As <code>root</code>,</p>
+
+<div class="highlight highlight-source-shell"><pre>useradd -m -g users -s /bin/bash -d /home/quake3 quake3 <span class="pl-c"># create quake3 user</span>
+passwd quake3 <span class="pl-c"># change quake3's password</span></pre></div>
+
+<p>Install the <code>ioquake3-server</code> package by running</p>
+
+<div class="highlight highlight-source-shell"><pre>apt-get install ioquake3-server <span class="pl-c"># install the Q3A server</span></pre></div>
+
+<p>Switch over to the newly created <code>quake3</code> user. The Q3A server installed at
+<code>/usr/lib/ioquake3/ioq3ded</code>, and running it should produce the following:</p>
+
+<pre><code>$ /usr/lib/ioquake3/ioq3ded
+
+ioq3 1.36+u20140802+gca9eebb-2+b1/Debian linux-x86_64 Oct 14 2014
+Have SSE support
+----- FS_Startup -----
+Current search path:
+/home/quake3/.q3a/baseq3
+/usr/lib/ioquake3/baseq3
+
+----------------------
+0 files in pk3 files
+"pak0.pk3" is missing. Please copy it from your legitimate Q3 CDROM. Point
+Release files are missing. Please re-install the 1.32 point release. Also check
+that your ioq3 executable is in the correct place and that every file in the
+"baseq3" directory is present and readable
+</code></pre>
+
+<p>We are missing the <code>.pk3</code> files from our Q3A CD or digital download.</p>
+
+<p>Running the server produces a <code>.q3a</code> directory in the home directory. Copy your
+Q3A files from the <code>baseq3</code> directory here. You can also copy the Quake III:
+Team Arena files by copying the <code>missionpack/</code> directory alongside <code>baseq3/</code>,
+although this is optional for a dedicated server. You should end up with this:</p>
+
+<pre><code>.q3a/
+├── baseq3
+│   ├── pak0.pk3
+│   ├── pak1.pk3
+│   ├── pak2.pk3
+│   ├── pak3.pk3
+│   ├── pak4.pk3
+│   ├── pak5.pk3
+│   ├── pak6.pk3
+│   ├── pak7.pk3
+│   └── pak8.pk3
+└── missionpack
+    ├── pak0.pk3
+    ├── pak1.pk3
+    ├── pak2.pk3
+    └── pak3.pk3
+</code></pre>
+
+<p>The server now has everything it needs to run correctly. You can start it up
+again with <code>/usr/lib/ioquake3/ioq3ded</code>, and kill it with <code>ctrl + c</code>. Now we just
+need to configure and automate it a bit.</p>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>The server can be configured using <code>.cfg</code> files. Typically the only one that is
+required is <code>autoexec.cfg</code>. However, it is very practical to divide the options
+between different files in order to better manage your server. Here I have
+divided the options between 4 files each with different functions.</p>
+
+<ol>
+<li>
+<code>autoexec.cfg</code> controls the most basic aspects of the server,</li>
+<li>
+<code>server.cfg</code> defines the gametype and most game options,</li>
+<li>
+<code>bots.cfg</code> allows for easy setup of the bots playing on the server, and</li>
+<li>
+<code>levels.cfg</code> sets up the maps to be played, their order, and rotation.</li>
+</ol>
+
+<p>I'll list each file here, and they are also included with this guide.</p>
+
+<div class="highlight highlight-source-c"><pre>$ cat autoexec.cfg
+
+set vm_game <span class="pl-c1">2</span>           <span class="pl-c">// I have no idea what this shit is</span>
+set vm_cgame <span class="pl-c1">2</span>          <span class="pl-c">// Nope</span>
+set vm_ui <span class="pl-c1">2</span>             <span class="pl-c">// Nada</span>
+set dedicated <span class="pl-c1">1</span>         <span class="pl-c">// Dedicated server but not announced</span>
+set com_hunkmegs <span class="pl-c1">128</span>    <span class="pl-c">// How much RAM for your server</span>
+set net_port <span class="pl-c1">27960</span>      <span class="pl-c">// The network port</span></pre></div>
+
+<div class="highlight highlight-source-c"><pre>$ cat server.cfg
+
+<span class="pl-c">// general server info</span>
+seta sv_hostname <span class="pl-s"><span class="pl-pds">"</span>Q3A CTF<span class="pl-pds">"</span></span>      <span class="pl-c">// name that appears in server list</span>
+seta g_motd <span class="pl-s"><span class="pl-pds">"</span>Hard CTF 24/7<span class="pl-pds">"</span></span>     <span class="pl-c">// message that appears when connecting</span>
+seta sv_maxclients <span class="pl-c1">16</span>           <span class="pl-c">// max number of clients than can connect</span>
+seta sv_pure <span class="pl-c1">1</span>                  <span class="pl-c">// pure server, no altered pak files</span>
+seta g_quadfactor <span class="pl-c1">4</span>             <span class="pl-c">// quad damage strength (3 is normal)</span>
+seta g_friendlyFire <span class="pl-c1">1</span>           <span class="pl-c">// friendly fire motherfucker</span>
+
+<span class="pl-c">// capture the flag</span>
+seta g_gametype <span class="pl-c1">4</span>               <span class="pl-c">// 0:FFA, 1:Tourney, 2:FFA, 3:TD, 4:CTF</span>
+seta g_teamAutoJoin <span class="pl-c1">0</span>           <span class="pl-c">// 0:goes into spectator mode, 1:auto joins a team </span>
+seta g_teamForceBalance <span class="pl-c1">0</span>       <span class="pl-c">// 0:free selection, 1:forces player on weak team</span>
+seta timelimit <span class="pl-c1">30</span>               <span class="pl-c">// Time limit in minutes</span>
+seta capturelimit <span class="pl-c1">8</span>             <span class="pl-c">// Capture limit for CTF</span>
+seta fraglimit <span class="pl-c1">0</span>                <span class="pl-c">// Frag limit</span>
+
+<span class="pl-c">// team deathmatch</span>
+<span class="pl-c">//seta g_gametype 3             // 0:FFA, 1:Tourney, 2:FFA, 3:TD, 4:CTF</span>
+<span class="pl-c">//seta g_teamAutoJoin 0         // 0:goes into spectator mode, 1:auto joins a team</span>
+<span class="pl-c">//seta g_teamForceBalance 1     // 0:free selection, 1:forces player on weak team</span>
+<span class="pl-c">//seta timelimit 15             // Time limit in minutes</span>
+<span class="pl-c">//seta fraglimit 25             // Frag limit</span>
+
+<span class="pl-c">// free for all</span>
+<span class="pl-c">//seta g_gametype 0             // 0:FFA, 1:Tourney, 2:FFA, 3:TD, 4:CTF</span>
+<span class="pl-c">//seta timelimit 10             // Time limit in minutes</span>
+<span class="pl-c">//seta fraglimit 15             // Frag limit</span>
+
+seta g_weaponrespawn <span class="pl-c1">2</span>          <span class="pl-c">// weapon respawn in seconds </span>
+seta g_inactivity <span class="pl-c1">120</span>           <span class="pl-c">// kick players after being inactive for x seconds</span>
+seta g_forcerespawn <span class="pl-c1">0</span>           <span class="pl-c">// player has to press primary button to respawn</span>
+seta g_log server.log           <span class="pl-c">// log name</span>
+seta logfile <span class="pl-c1">3</span>                  <span class="pl-c">// probably some kind of log verbosity?   </span>
+seta rconpassword <span class="pl-s"><span class="pl-pds">"</span>secret<span class="pl-pds">"</span></span>      <span class="pl-c">// sets RCON password for remote console</span>
+
+seta rate <span class="pl-s"><span class="pl-pds">"</span>12400<span class="pl-pds">"</span></span>               <span class="pl-c">// not sure</span>
+seta snaps <span class="pl-s"><span class="pl-pds">"</span>40<span class="pl-pds">"</span></span>                 <span class="pl-c">// what this</span>
+seta cl_maxpackets <span class="pl-s"><span class="pl-pds">"</span>40<span class="pl-pds">"</span></span>         <span class="pl-c">// stuff is</span>
+seta cl_packetdup <span class="pl-s"><span class="pl-pds">"</span>1<span class="pl-pds">"</span></span>           <span class="pl-c">// all about</span></pre></div>
+
+<div class="highlight highlight-source-c"><pre>$ cat bots.cfg
+
+seta bot_enable <span class="pl-c1">1</span>       <span class="pl-c">// Allow bots on the server</span>
+seta bot_nochat <span class="pl-c1">1</span>       <span class="pl-c">// Shut those fucking bots up</span>
+seta g_spskill <span class="pl-c1">4</span>        <span class="pl-c">// Default skill of bots [1-5] </span>
+seta bot_minplayers <span class="pl-c1">5</span>   <span class="pl-c">// This fills the server with bots to satisfy the minimum</span>
+
+<span class="pl-c">//## Manual adding of bots. syntax:</span>
+<span class="pl-c">//## addbot name [skill] [team] [delay]</span>
+<span class="pl-c">//addbot doom       4   blue    10</span>
+<span class="pl-c">//addbot bones      4   blue    10</span>
+<span class="pl-c">//addbot slash      4   blue    10</span>
+<span class="pl-c">//addbot orbb       4   red     10</span>
+<span class="pl-c">//addbot major      4   red     10</span>
+<span class="pl-c">//addbot hunter     4   red     10</span>
+<span class="pl-c">//addbot bitterman  4   red     10</span>
+<span class="pl-c">//addbot keel       4   red     10</span></pre></div>
+
+<div class="highlight highlight-source-c"><pre>$ cat levels.cfg
+
+set dm1 <span class="pl-s"><span class="pl-pds">"</span>map q3ctf4; set nextmap vstr dm2<span class="pl-pds">"</span></span>
+set dm2 <span class="pl-s"><span class="pl-pds">"</span>map q3ctf3; set nextmap vstr dm3<span class="pl-pds">"</span></span>
+set dm3 <span class="pl-s"><span class="pl-pds">"</span>map q3ctf2; set nextmap vstr dm4<span class="pl-pds">"</span></span>
+set dm4 <span class="pl-s"><span class="pl-pds">"</span>map q3ctf1; set nextmap vstr dm1<span class="pl-pds">"</span></span>
+vstr dm1</pre></div>
+
+<p>These files need to be placed in the <code>.q3a/baseq3/</code> directory.</p>
+
+<h2>
+<a id="running-your-q3a-server" class="anchor" href="#running-your-q3a-server" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Running your Q3A server</h2>
+
+<p>You can start your server using these config files by running</p>
+
+<div class="highlight highlight-source-shell"><pre>/usr/lib/ioquake3/ioq3ded +<span class="pl-c1">exec</span> server.cfg +<span class="pl-c1">exec</span> levels.cfg +<span class="pl-c1">exec</span> bots.cfg</pre></div>
+
+<p>It is possible to run the server in the background or even autostarting it after
+booting in to the system. However, in this guide I suggest running it manually
+with the <code>quake3</code> user, inside of a GNU Screen session. This makes it very easy
+to access and monitor. Additionally, the server binary is very verbose and
+details everything that is occurring in-game. This can be especially amusing
+when you have bots fighting even when you are not connected.</p>
+
+<p>I have created a simple script that loads the configuration files and starts the
+server automatically. Remember, the files need to be placed in the
+<code>.q3a/baseq3/</code> directory for the program to see them. You can place the
+following script directly into the home directory of the <code>quake3</code> user:</p>
+
+<div class="highlight highlight-source-shell"><pre>$ cat q3start.sh
+
+<span class="pl-c">#!/bin/bash</span>
+<span class="pl-c"># quick starting a quake 3 dedicated server</span>
+/usr/lib/ioquake3/ioq3ded +<span class="pl-c1">exec</span> server.cfg +<span class="pl-c1">exec</span> levels.cfg +<span class="pl-c1">exec</span> bots.cfg</pre></div>
+
+<p>In summary, you should</p>
+
+<ol>
+<li>log on to the computer,</li>
+<li>start a Screen session with <code>screen -D -R</code>,</li>
+<li>switch to the <code>quake3</code> user with <code>su - quake3</code>,</li>
+<li>execute the server with <code>./q3start.sh</code>, and</li>
+<li>enjoy!</li>
+</ol>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/roguephysicist/q3a-server">Q3a-server</a> is maintained by <a href="https://github.com/roguephysicist">roguephysicist</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
