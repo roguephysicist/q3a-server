@@ -2,7 +2,7 @@ Installing a Quake III Arena dedicated server
 =============================================
 
 This is a guide for setting up a dedicated Q3A server on Linux. It is mostly
-distribution-agnostic so it will work on almost any distribution with little or
+distribution-agnostic so it will work on almost any Linux flavor with little or
 no modification. The required software is available for many hardware platforms,
 so you can very quickly setup your own server on almost any kind of computer. A
 Raspberry Pi 2 or 3 makes an excellent Q3A server!
