@@ -13,8 +13,7 @@ while you are not connected! This guide has only been tested for the original
 Q3A, but I imagine that similar steps and configuration files could be used for
 other games that use this engine.
 
-You can read more about this on the [official ioquake3 documentation]
-(http://wiki.ioquake3.org/Sys_Admin_Guide).
+You can read more about this on the [official ioquake3 documentation](http://wiki.ioquake3.org/Sys_Admin_Guide).
 
 You will need:
 
