@@ -13,7 +13,12 @@ while you are not connected! This guide has only been tested for the original
 Q3A, but I imagine that similar steps and configuration files could be used for
 other games that use this engine.
 
-You can read more about this on the [official ioquake3 documentation](http://wiki.ioquake3.org/Sys_Admin_Guide).
+You can read more about this on the
+[official ioquake3 documentation](http://wiki.ioquake3.org/Sys_Admin_Guide).
+See
+[here](http://www.3dgw.com/guides/q3a/index.php3?page=configs.htm#servercfg) and
+[here](https://www.quake3world.com/q3guide/servers.html) for more information about
+the config files and about maintaining a Q3A server.
 
 You will need:
 
